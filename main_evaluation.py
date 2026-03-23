@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--openai-api-key", default="")
     parser.add_argument("--judge-model-name", default="google/gemma-3-4b-it")
     parser.add_argument("--judge-batch-size", type=int, default=8)
-    parser.add_argument("--judge-max-new-tokens", type=int, default=96)
+    parser.add_argument("--judge-max-new-tokens", type=int, default=256)
     parser.add_argument("--judge-system-prompt", default=DEFAULT_JUDGE_PROMPT)
     return parser.parse_args()
 
