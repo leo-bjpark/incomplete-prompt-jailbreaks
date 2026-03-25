@@ -55,6 +55,7 @@ def _build_rows(
 
     if setting == "completion_benchmark":
         prompts = list(ds["prompt"])
+        categories = list(ds["category"])
         for idx, prompt in enumerate(prompts):
             rows.append(
                 {
@@ -63,6 +64,7 @@ def _build_rows(
                         "row_index": idx,
                         "source_prompt": prompt,
                         "prompt": prompt,
+                        "category": categories[idx],
                     },
                     "generation": generations[idx] if idx < len(generations) else "",
                     "evals": [],
@@ -86,6 +88,7 @@ def _build_rows(
                     "source_prompt": record["user_request"],
                     "response_prefill": record["response_prefill"],
                     "prompt": prompt,
+                    "category": record["category"],
                 },
                 "generation": generations[idx] if idx < len(generations) else "",
                 "evals": [],
