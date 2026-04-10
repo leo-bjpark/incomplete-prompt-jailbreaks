@@ -14,7 +14,7 @@ OPENAI_API_URL_COMPLETIONS = "https://api.openai.com/v1/completions"
 ANTHROPIC_API_URL_MESSAGES = "https://api.anthropic.com/v1/messages"
 
 SUPPORTED_CLOSED_MODELS = {
-    "openai": {"gpt-4o", "gpt-5.2", "gpt-3.5-turbo-instruct"},
+    "openai": {"gpt-4o", "gpt-5.2", "gpt-3.5-turbo", "gpt-3.5-turbo-instruct"},
     "anthropic": {"claude-sonnet-4.6"},
 }
 
@@ -126,20 +126,26 @@ def _openai_generate(
         "Content-Type": "application/json",
     }
 
-    if model_name.startswith("gpt-3.5"):
+    if model_name == "gpt-3.5-turbo-instruct":
         payload = {
             "model": model_name,
             "prompt": prompt,
             "max_tokens": max_new_tokens,
             "temperature": 0,
         }
-        data = _http_post_json(
-            OPENAI_API_URL_COMPLETIONS,
-            payload,
-            headers,
-            timeout=timeout,
-            max_retries=max_retries,
-        )
+        try:
+            data = _http_post_json(
+                OPENAI_API_URL_COMPLETIONS,
+                payload,
+                headers,
+                timeout=timeout,
+                max_retries=max_retries,
+            )
+        except RuntimeError as exc:
+            raise RuntimeError(
+                f"{exc}\nHint: This project may not have access to gpt-3.5-turbo-instruct. "
+                "Use --model-name gpt-3.5-turbo for GPT-3.5 evaluation in completion_benchmark."
+            ) from exc
         return _extract_openai_text(data)
 
     payload = {

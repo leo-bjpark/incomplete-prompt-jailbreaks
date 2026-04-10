@@ -65,7 +65,7 @@ python main_generation.py \
 
 python main_generation.py \
   --generation-backend openai \
-  --model-name gpt-3.5-turbo-instruct \
+  --model-name gpt-3.5-turbo \
   --setting all \
   --openai-api-key $OPENAI_API_KEY
 
@@ -137,7 +137,7 @@ python main_evaluation.py \
 
 Notes for closed-model generation:
 
-- allowed OpenAI models: `gpt-4o`, `gpt-5.2`, `gpt-3.5-turbo-instruct` (GPT-3.5 completion)
+- allowed OpenAI models: `gpt-4o`, `gpt-5.2`, `gpt-3.5-turbo` (recommended), `gpt-3.5-turbo-instruct` (if project has access)
 - allowed Anthropic model: `claude-sonnet-4.6`
 - API key precedence: CLI argument first, then environment variable (`OPENAI_API_KEY` / `ANTHROPIC_API_KEY`)
 - `chat_template_benchmark` prompts use a provider-agnostic text format:

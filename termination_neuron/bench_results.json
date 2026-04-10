@@ -1,0 +1,39 @@
+{
+  "model": "Qwen/Qwen3-4B-Instruct-2507",
+  "seed": 42,
+  "max_samples": 1000,
+  "batch_size": 4,
+  "timestamp": "2026-02-19 16:29:36",
+  "results": [
+    {
+      "task": "mmlu",
+      "n": 1000,
+      "accuracy": 0.428,
+      "extra": {
+        "schema": "mixed"
+      }
+    },
+    {
+      "task": "hellaswag",
+      "n": 1000,
+      "accuracy": 0.498,
+      "extra": {}
+    },
+    {
+      "task": "boolq",
+      "n": 1000,
+      "accuracy": 0.827,
+      "extra": {}
+    },
+    {
+      "task": "gsm8k",
+      "n": 1000,
+      "accuracy": 0.323,
+      "extra": {
+        "extractor": "last_int",
+        "max_new_tokens": 512
+      }
+    }
+  ],
+  "avg_accuracy": 0.519
+}
