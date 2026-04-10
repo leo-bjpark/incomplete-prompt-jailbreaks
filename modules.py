@@ -80,12 +80,13 @@ def generate_response(model, tokenizer, prompts, batch_size=8, max_new_tokens=12
             truncation=True
         ).to(model.device)
         
-        # 3. Generate outputs with gradient calculation disabled for efficiency
-        with torch.no_grad():
+        # 3. Generate outputs with inference-mode and KV cache for speed.
+        with torch.inference_mode():
             outputs = model.generate(
                 **inputs,  # Unpacks input_ids and attention_mask automatically
                 max_new_tokens=max_new_tokens, 
                 do_sample=False,
+                use_cache=True,
                 pad_token_id=tokenizer.pad_token_id
             )
         

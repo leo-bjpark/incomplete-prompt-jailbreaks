@@ -3,38 +3,38 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODEL_NAME="${1:-}"
 
-MODEL_NAMES=(
-  # "meta-llama/Llama-3.1-70B-Instruct"
-  # "meta-llama/Llama-3.1-8B-Instruct"
-  # "Qwen/Qwen3-4B-Instruct-2507"
-  # "Qwen/Qwen2.5-7B-Instruct"
-  # "Qwen/Qwen3-32B"
-
-  "google/gemma-3-270m-it"
-  "google/gemma-3-4b-it"
-  "google/gemma-3-12b-it"
-  "google/gemma-3-27b-it"
-)
+if [[ -z "${MODEL_NAME}" ]]; then
+  echo "Usage: ${0} <model_name>"
+  exit 1
+fi
 
 JUDGE_MODEL_NAME="${JUDGE_MODEL_NAME:-google/gemma-3-12b-it}"
+MODERATION_MAX_WORKERS="${MODERATION_MAX_WORKERS:-16}"
 
-for model_name in "${MODEL_NAMES[@]}"; do
-  python "${SCRIPT_DIR}/main_evaluation.py" \
-    --model-name "${model_name}" \
-    --setting all \
-    --evaluator judge_model \
-    --judge-model-name "${JUDGE_MODEL_NAME}" \
-    --output-dir "${SCRIPT_DIR}/outputs"
-done
+EXTRA_ARGS=()
+if [[ "${SKIP_EXISTING_EVALS:-1}" == "1" ]]; then
+  EXTRA_ARGS+=(--skip-existing-evals)
+fi
+
+python "${SCRIPT_DIR}/main_evaluation.py" \
+  --model-name "${MODEL_NAME}" \
+  --setting all \
+  --evaluator judge_model \
+  --judge-model-name "${JUDGE_MODEL_NAME}" \
+  "${EXTRA_ARGS[@]}" \
+  --output-dir "${SCRIPT_DIR}/outputs"
 
 if [[ -n "${OPENAI_API_KEY:-}" ]]; then
-  for model_name in "${MODEL_NAMES[@]}"; do
-    python "${SCRIPT_DIR}/main_evaluation.py" \
-      --model-name "${model_name}" \
-      --setting all \
-      --evaluator openai_moderation_api \
-      --openai-api-key "${OPENAI_API_KEY}" \
-      --output-dir "${SCRIPT_DIR}/outputs"
-  done
+  python "${SCRIPT_DIR}/main_evaluation.py" \
+    --model-name "${MODEL_NAME}" \
+    --setting all \
+    --evaluator openai_moderation_api \
+    --openai-api-key "${OPENAI_API_KEY}" \
+    --moderation-max-workers "${MODERATION_MAX_WORKERS}" \
+    "${EXTRA_ARGS[@]}" \
+    --output-dir "${SCRIPT_DIR}/outputs"
+else
+  echo "OPENAI_API_KEY is not set. Skipping openai_moderation_api evaluation."
 fi

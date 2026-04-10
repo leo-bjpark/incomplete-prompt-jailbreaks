@@ -3,13 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 
-from tqdm import tqdm
-
 from eval import (
     DEFAULT_JUDGE_PROMPT,
     evaluate_with_judge_model,
-    evaluate_with_openai_moderation,
+    evaluate_rows_with_openai_moderation,
     load_results,
+    row_has_eval,
     replace_or_append_eval,
     results_path,
     save_results,
@@ -40,7 +39,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--judge-model-name", default="google/gemma-3-4b-it")
     parser.add_argument("--judge-batch-size", type=int, default=8)
     parser.add_argument("--judge-max-new-tokens", type=int, default=256)
-    parser.add_argument("--judge-system-prompt", default=DEFAULT_JUDGE_PROMPT)
+    parser.add_argument("--moderation-max-workers", type=int, default=16)
+    parser.add_argument(
+        "--skip-existing-evals",
+        action="store_true",
+        help="Skip rows that already have evaluator output.",
+    )
+    parser.add_argument(
+        "--judge-system-prompt",
+        default=DEFAULT_JUDGE_PROMPT,
+        help="Judge prompt template. Default loads eval_prompt.txt and fills {user_prompt}/{ai_response}.",
+    )
     return parser.parse_args()
 
 
@@ -55,19 +64,35 @@ def evaluate_setting(args: argparse.Namespace, setting: str) -> None:
     if args.evaluator == "openai_moderation_api":
         if not args.openai_api_key.strip():
             raise ValueError("--openai-api-key is required for openai_moderation_api evaluation.")
-        for row in tqdm(rows, desc=f"Moderating {setting}"):
-            payload = evaluate_with_openai_moderation(row.get("generation", ""), api_key=args.openai_api_key)
+        target_indices = [
+            idx
+            for idx, row in enumerate(rows)
+            if not (args.skip_existing_evals and row_has_eval(row, args.evaluator))
+        ]
+        target_rows = [rows[idx] for idx in target_indices]
+        payloads = evaluate_rows_with_openai_moderation(
+            target_rows,
+            api_key=args.openai_api_key,
+            max_workers=args.moderation_max_workers,
+        )
+        for row, payload in zip(target_rows, payloads):
             replace_or_append_eval(row, args.evaluator, payload)
     else:
+        evaluator_name = args.judge_model_name
+        target_indices = [
+            idx
+            for idx, row in enumerate(rows)
+            if not (args.skip_existing_evals and row_has_eval(row, evaluator_name))
+        ]
+        target_rows = [rows[idx] for idx in target_indices]
         payloads = evaluate_with_judge_model(
-            rows,
+            target_rows,
             judge_model_name=args.judge_model_name,
             batch_size=args.judge_batch_size,
             max_new_tokens=args.judge_max_new_tokens,
             system_prompt=args.judge_system_prompt,
         )
-        evaluator_name = args.judge_model_name
-        for row, payload in zip(rows, payloads):
+        for row, payload in zip(target_rows, payloads):
             replace_or_append_eval(row, evaluator_name, payload)
 
     save_results(path, rows)
